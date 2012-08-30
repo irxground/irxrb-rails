@@ -1,2 +1,4 @@
-module IrxrbRails
+module Irxrb
+  module Rails
+  end
 end

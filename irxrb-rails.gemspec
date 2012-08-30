@@ -6,7 +6,7 @@ require "irxrb-rails/version"
 # Describe your gem and declare its dependencies:
 Gem::Specification.new do |s|
   s.name        = "irxrb-rails"
-  s.version     = IrxrbRails::VERSION
+  s.version     = Irxrb::Rails::VERSION
   s.authors     = ["TODO: Your name"]
   s.email       = ["TODO: Your email"]
   s.homepage    = "TODO"

@@ -1,3 +1,5 @@
-module IrxrbRails
-  VERSION = "0.0.1"
+module Irxrb
+  module Rails
+    VERSION = "0.0.1"
+  end
 end
