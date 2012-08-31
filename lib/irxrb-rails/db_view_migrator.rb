@@ -1,7 +1,8 @@
 module Irxrb::Rails
-  class ViewMigrator
+  class DBViewMigrator
 
     # ===== ===== ===== CLASS METHODS ===== ===== =====
+
     class << self
       def run
         @holder = new
@@ -52,31 +53,30 @@ module Irxrb::Rails
     private
     def execute(name)
       return                     if @executed[name] == true
-      raise 'Infinit Loop'       if @executed[name] == false
+      raise 'Infinite Loop'      if @executed[name] == false
       raise "Not Found: #{name}" unless @views.has_key? name
 
       depends, block = @views.delete name
       @executed[name] = false
       depends.each{|name| execute(name) }
-      run_sql(name, &block)
+      create(name, &block)
       @executed[name] = true
     end
 
-    def run_sql(name, &block)
+    def create(name, &block)
       puts "--> #{name}"
-      query = block.call
+      query = yield
       query_str = (query.respond_to?(:to_sql) ? query.to_sql : query).to_s
       begin
-        exec "SELECT * FROM #{name} LIMIT 1"
-        exec "DROP VIEW #{name}"
+        send_sql "DROP VIEW #{name}"
       rescue
         # do nothing
       end
 
-      exec "CREATE VIEW #{name} AS " + query_str
+      send_sql "CREATE VIEW #{name} AS " + query_str
     end
 
-    def exec(query)
+    def send_sql(query)
       ActiveRecord::Base.connection.execute(query)
     end
   end
