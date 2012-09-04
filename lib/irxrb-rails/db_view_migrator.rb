@@ -42,7 +42,9 @@ module Irxrb::Rails
     end
 
     def migrate
-      puts "==== CREATE VIEW ===="
+      title = 'CREATE VIEW'
+      puts "==  #{title} " + '=' * [74 - title.size, 0].max
+
       @executed = {}
       while @views.size > 0
         name = @views.keys.first
@@ -64,20 +66,37 @@ module Irxrb::Rails
     end
 
     def create(name, &block)
-      puts "--> #{name}"
+      puts "-- #{name}"
       query = yield
       query_str = (query.respond_to?(:to_sql) ? query.to_sql : query).to_s
-      begin
-        send_sql "DROP VIEW #{name}"
-      rescue
-        # do nothing
-      end
+      try_drop_view name
+      send_sql "CREATE VIEW #{name} AS\n" + query_str
+    end
 
-      send_sql "CREATE VIEW #{name} AS " + query_str
+    def try_drop_view(name)
+      con = ActiveRecord::Base.connection
+      case con
+      when postgresql?
+        con.execute "DROP VIEW #{name} CASCADE" if con.table_exists? name
+      when sqlite?
+        con.execute "DROP VIEW #{name}" rescue nil
+      else
+        raise NotImplementedError, "#{con.class.name} is not supported."
+      end
     end
 
     def send_sql(query)
       ActiveRecord::Base.connection.execute(query)
+    end
+
+    def sqlite?
+      defined?(ActiveRecord::ConnectionAdapters::SQLiteAdapter) and
+        ActiveRecord::ConnectionAdapters::SQLiteAdapter
+    end
+
+    def postgresql?
+      defined?(ActiveRecord::ConnectionAdapters::PostgreSQLAdapter) and
+        ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
     end
   end
 end
