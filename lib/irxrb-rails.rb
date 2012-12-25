@@ -5,3 +5,5 @@ module Irxrb
     autoload :DBViewMigrator, 'irxrb-rails/db_view_migrator'
   end
 end
+
+require 'irxrb-rails/railtie' if defined?(Rails)

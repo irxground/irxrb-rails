@@ -4,15 +4,39 @@ module Irxrb::Rails
     # ===== ===== ===== CLASS METHODS ===== ===== =====
 
     class << self
-      def run
+      def drop_all
+        announce 'DROP VIEWS'
+        ActiveRecord::Base.connection.drop_all_views
+      end
+
+      def migrate(paths = nil)
+        if block_given?
+          drop_all
+          yield
+          migrate(paths)
+          return
+        end
+
+        announce 'CREATE VIEWS'
+
+        paths = paths.presence || ActiveRecord::Migrator.migrations_paths
+        paths = Array.wrap(paths)
         @holder = new
-        Dir[Rails.root + 'db/migrate/views/**/*.rb'].each{|f| require f }
+        Dir[*paths.map { |path| path + '/views/**/*.rb' }].each { |f| require f }
         @holder.migrate
         @holder = nil
       end
 
       def define(&block)
         @holder.instance_eval &block
+      end
+
+      private
+
+      def announce(text)
+        if ActiveRecord::Migration.verbose
+          ActiveRecord::Migration.announce text
+        end
       end
     end
 
@@ -42,9 +66,6 @@ module Irxrb::Rails
     end
 
     def migrate
-      title = 'CREATE VIEW'
-      puts "==  #{title} " + '=' * [74 - title.size, 0].max
-
       @executed = {}
       while @views.size > 0
         name = @views.keys.first
@@ -53,6 +74,7 @@ module Irxrb::Rails
     end
 
     private
+
     def execute(name)
       return                     if @executed[name] == true
       raise 'Infinite Loop'      if @executed[name] == false
@@ -61,42 +83,21 @@ module Irxrb::Rails
       depends, block = @views.delete name
       @executed[name] = false
       depends.each{|name| execute(name) }
-      create(name, &block)
+      execute_core(name, &block)
       @executed[name] = true
     end
 
-    def create(name, &block)
-      puts "-- #{name}"
+    def execute_core(name, &block)
+      say name
       query = yield
       query_str = (query.respond_to?(:to_sql) ? query.to_sql : query).to_s
-      try_drop_view name
-      send_sql "CREATE VIEW #{name} AS\n" + query_str
+      ActiveRecord::Base.connection.execute "CREATE VIEW #{name} AS\n" + query_str
     end
 
-    def try_drop_view(name)
-      con = ActiveRecord::Base.connection
-      case con
-      when postgresql?
-        con.execute "DROP VIEW #{name} CASCADE" if con.table_exists? name
-      when sqlite?
-        con.execute "DROP VIEW #{name}" rescue nil
-      else
-        raise NotImplementedError, "#{con.class.name} is not supported."
+    def say(text)
+      if ActiveRecord::Migration.verbose
+        ActiveRecord::Migration.say text
       end
-    end
-
-    def send_sql(query)
-      ActiveRecord::Base.connection.execute(query)
-    end
-
-    def sqlite?
-      defined?(ActiveRecord::ConnectionAdapters::SQLiteAdapter) and
-        ActiveRecord::ConnectionAdapters::SQLiteAdapter
-    end
-
-    def postgresql?
-      defined?(ActiveRecord::ConnectionAdapters::PostgreSQLAdapter) and
-        ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
     end
   end
 end
