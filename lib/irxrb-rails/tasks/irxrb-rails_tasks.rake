@@ -16,7 +16,7 @@ namespace :db do
     Rake::Task['db:views:migrate'].invoke
   end
   namespace :test do
-    task :prepare => 'db:views:drop' do
+    task :prepare do
       Rake::Task['db:views:migrate'].invoke
     end
   end
