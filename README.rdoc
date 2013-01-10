@@ -1,3 +1,5 @@
 = IrxrbRails
 
+https://rubygems.org/gems/irxrb-rails
+
 This project rocks and uses MIT-LICENSE.
