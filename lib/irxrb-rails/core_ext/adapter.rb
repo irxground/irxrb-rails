@@ -36,10 +36,8 @@ module ActiveRecord::ConnectionAdapters
               .where(table[:schemaname].eq 'public')
               .project(table[:viewname])
               .to_sql)
-          result.each do |row|
-            name = row['viewname']
-            execute "DROP VIEW IF EXISTS #{name} CASCADE"
-          end
+          names = result.map{|row| row['viewname'] }.join(', ')
+          execute "DROP VIEW IF EXISTS #{names} CASCADE"
         end
       end
     end
