@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.version     = Irxrb::Rails::VERSION
   s.authors     = ["irxground"]
   s.email       = ["irxnjhtchlnrw@gmail.com"]
-#  s.homepage    = "TODO"
+  s.homepage    = "https://github.com/irxground/irxrb-rails"
   s.summary     = "Rails extension"
   s.description = "Rails extension"
 
