@@ -1,45 +1,23 @@
-
 module ActiveRecord::ConnectionAdapters
-
   class AbstractAdapter
     def drop_all_views
-      raise "#{self.class.name} is not supported."
-    end
-  end
-
-  if defined? SQLiteAdapter
-    class SQLiteAdapter
-      def drop_all_views
-        table = Arel::Table.new('sqlite_master')
-        ActiveRecord::Base.transaction do
-          result = execute(
-            table
-              .where(table[:type].eq 'view')
-              .project(table[:name])
-              .to_sql)
-          result.each do |row|
-            name = row['name']
-            execute "DROP VIEW #{name}"
+      if defined?(SQLiteAdapter) && is_a?(SQLiteAdapter)
+        unless SQLiteAdapter.include? Irxrb::Rails::SQLiteAdapter
+          SQLiteAdapter.class_eval do
+            include Irxrb::Rails::SQLiteAdapter
           end
+          return self.__send__(__method__)
         end
       end
-    end
-  end
-
-  if defined? PostgreSQLAdapter
-    class PostgreSQLAdapter
-      def drop_all_views
-        table = Arel::Table.new('pg_views')
-        ActiveRecord::Base.transaction do
-          result = execute(
-            table
-              .where(table[:schemaname].eq 'public')
-              .project(table[:viewname])
-              .to_sql)
-          names = result.map{|row| row['viewname'] }.join(', ')
-          execute "DROP VIEW IF EXISTS #{names} CASCADE"
+      if defined?(PostgreSQLAdapter) && is_a?(PostgreSQLAdapter)
+        unless PostgreSQLAdapter.include? Irxrb::Rails::PostgreSQLAdapter
+          PostgreSQLAdapter.class_eval do
+            include Irxrb::Rails::PostgreSQLAdapter
+          end
+          return self.__send__(__method__)
         end
       end
+      raise "#{self.class.name} is not supported."
     end
   end
 end

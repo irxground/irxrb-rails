@@ -4,6 +4,7 @@ module Irxrb::Rails
     # ===== ===== ===== CLASS METHODS ===== ===== =====
 
     class << self
+
       def drop_all
         announce 'DROP VIEWS'
         ActiveRecord::Base.connection.drop_all_views
@@ -12,9 +13,9 @@ module Irxrb::Rails
       def migrate(paths = nil)
         if block_given?
           drop_all
-          yield
+          ret = yield
           migrate(paths)
-          return
+          return ret
         end
 
         announce 'CREATE VIEWS'
@@ -22,7 +23,7 @@ module Irxrb::Rails
         paths = paths.presence || ActiveRecord::Migrator.migrations_paths
         paths = Array.wrap(paths)
         @holder = new
-        Dir[*paths.map { |path| path + '/views/**/*.rb' }].each { |f| require f }
+        Dir[*paths.map { |path| path + '/views/**/*.rb' }].each { |f| load f }
         @holder.migrate
         @holder = nil
       end
