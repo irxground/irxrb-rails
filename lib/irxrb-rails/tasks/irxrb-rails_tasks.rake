@@ -15,9 +15,11 @@ namespace :db do
   task :migrate => 'db:views:drop' do
     Rake::Task['db:views:migrate'].invoke
   end
-  namespace :test do
-    task :prepare do
-      Rake::Task['db:views:migrate'].invoke
+  if Rails.gem_version < Gem::Version.new('4.1.0')
+    namespace :test do
+      task :prepare do
+        Rake::Task['db:views:migrate'].invoke
+      end
     end
   end
 end
